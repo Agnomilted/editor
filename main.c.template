@@ -1,0 +1,31 @@
+// LICENSE
+// EXPLANATION
+
+// HEADERS
+
+// MACROS
+
+// TYPES
+
+// FUNCTION DECLARATIONS
+
+// GLOBAL VARIABLES
+
+// FUNCTION DEFINITIONS
+
+#include "functions.h"
+
+#include "config.h"
+
+int
+main(int argc, char** argv){
+// fetch command line arguments
+
+// set up memory and misc
+
+// run
+
+// cleanup
+
+// quit
+}
