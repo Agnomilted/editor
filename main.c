@@ -12,10 +12,16 @@
 char filename[FILENAME_MAX];
 char* projectdir = "/tmp/editor";
 char *commandprompt = ": ";
+char *inputprompt = "> ";
 int32_t commandpromptlen;
+char *defaulteditor = "vim";
 
 struct flags{
 	int a0 : 1; //specified file name in arguments
+	int a1 : 1; //
+
+
+	char editorprogram[FILENAME_MAX];
 } proj;
 
 void print(char* s){
@@ -62,11 +68,21 @@ void fetcharguments(int argc, char** argv){
 	}
 }
 
+void fetchenvvars(void){
+	char *a = getenv("EDITOR");
+	if(!a)
+		strcpy(proj.editorprogram, defaulteditor);
+	else 
+		strcpy(proj.editorprogram, a);
+
+}
+
 int main (int argc, char** argv){
 	proj.a0 = 0;
 	commandpromptlen = strlen(commandprompt);
 
 	fetcharguments(argc, argv);
+	fetchenvvars();
 	struct stat st = {0};
 	if(!stat(projectdir, &st)){
 		prompt("there are files in the temporary project directory, do you want to overwrite them ?(y/n)\n");
@@ -87,25 +103,22 @@ int main (int argc, char** argv){
 	else if (stat(projectdir, &st) == -1){
 		mkdir(projectdir, 0770);
 	}
-	int32_t commandargnum;
 	char commandargs[COMMANDARGNUMLIMIT][COMMANDMAXSIZE];
-	char command[COMMANDMAXSIZE];
+	char command[COMMANDMAXSIZE], output[COMMANDMAXSIZE];
 	int32_t i, j;
 	int8_t f1;
 	int32_t len, len2;
 	for(;;){
 		i = 0, j = 0, len2 = 0, f1 = 0;
-		print(commandprompt);
+		print(inputprompt);
 		len = read(0, command, COMMANDMAXSIZE);
 		for(;i<len && j < COMMANDARGNUMLIMIT;++i){
 			if(command[i] == '\"'){
-				commandargs[j][len2 + 1] = '\0';
+				commandargs[j][len2] = '\0';
 				f1 = !f1;
-				++j;
-				len2 = 0;
 			}
 			else if(command[i] == ' ' && !f1){
-				commandargs[j][len2 + 1] = '\0';
+				commandargs[j][len2] = '\0';
 				++j;
 				len2 = 0;
 			}
@@ -115,11 +128,30 @@ int main (int argc, char** argv){
 			}
 		}
 		commandargs[j][len2 - 1] = '\0';
-		commandargnum = j + 1;
 		
-		if(!strcmp(commandargs[j], "edit")){
-			prompt("edit mode\n");
+		if(!strcmp(commandargs[0], "edit")){
+			concatenate(output, projectdir, "/");
+			concatenate(output, output, commandargs[1]);
+			char *a[3] = { proj.editorprogram, output, 0 };
+			spawn(a);
 		}
+		else if(!strcmp(commandargs[0], "write")){
+			prompt("write mode\n");
+			concatenate(output, "written file is ", commandargs[1]);
+			prompt(output);
+
+		}
+		else if(!strcmp(commandargs[0], "yarak")){
+			prompt("yes yarak!");
+		}
+		else {
+			prompt("unknown command!");
+		}
+		putchar('\n');
+		memset(commandargs, '\0', COMMANDMAXSIZE * COMMANDARGNUMLIMIT);
+		memset(command, '\0', COMMANDMAXSIZE);
+		memset(output, '\0', COMMANDMAXSIZE);
+
 	}
 
 	return 0;
